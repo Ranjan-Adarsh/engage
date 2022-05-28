@@ -9,13 +9,19 @@ from PIL import Image,ImageTk
 import mysql.connector
 from tkinter import messagebox
 import cv2
+from time import strftime
+from datetime import datetime
+
+SQL_USER="root"
+SQL_SERVER_PASSWORD="Rasengan08.."
+SQL_HOST="localhost"
 
 
 class Student(tk.Toplevel):
     def __init__(self,parent):
         super().__init__(parent)
         self.geometry("1530x790+0+0")
-        self.title("new window")
+        self.title("Student Management System")
 
          #=============variables=======
         self.var_dep=StringVar()
@@ -124,8 +130,11 @@ class Student(tk.Toplevel):
         take_Photo_btn=Button(buttonFrame2,text="Take Photo Sample",command=self.generate_attend_dataset,width=16,font=("open sans",12,"bold"),bg="blue",fg="white")
         take_Photo_btn.grid(row=0,column=1,padx=2,pady=3)
 
-        update_Photo_btn=Button(buttonFrame2,text="Update Photo Sample",width=16,font=("open sans",12,"bold"),bg="blue",fg="white")
+        update_Photo_btn=Button(buttonFrame2,text="Update Photo Sample",command=self.generate_attend_dataset,width=16,font=("open sans",12,"bold"),bg="blue",fg="white")
         update_Photo_btn.grid(row=0,column=2,padx=2,pady=3)
+
+        addMore_Photo_btn=Button(buttonFrame2,text="Add More Photo",command=self.add_more_attend_dataset,width=16,font=("open sans",12,"bold"),bg="blue",fg="white")
+        addMore_Photo_btn.grid(row=0,column=3,padx=2,pady=3)
 
 
         #right pane
@@ -196,7 +205,7 @@ class Student(tk.Toplevel):
             messagebox.showerror("Error","All fields are required",parent=self)
         else:
             try:
-                connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
+                connect=mysql.connector.connect(host=SQL_HOST,user=SQL_USER,password=SQL_SERVER_PASSWORD,database="attendance")
                 mySql_cursor=connect.cursor()
                 mySql_cursor.execute("insert into student values(%s,%s,%s,%s,%s,%s,%s)",(
                     self.var_dep.get(),
@@ -216,7 +225,7 @@ class Student(tk.Toplevel):
 
     #======fetch data===
     def fetch_data(self):
-        connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
+        connect=mysql.connector.connect(host=SQL_HOST,user=SQL_USER,password=SQL_SERVER_PASSWORD,database="attendance")
         mySql_cursor=connect.cursor()
         mySql_cursor.execute("select * from student")
         data=mySql_cursor.fetchall()
@@ -249,7 +258,7 @@ class Student(tk.Toplevel):
             try:
                 updateData=messagebox.askyesno("Update","Do you want to update the student details? You can't update student ID since it's unique.",parent=self)
                 if updateData>0:
-                    connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
+                    connect=mysql.connector.connect(host=SQL_HOST,user=SQL_USER,password=SQL_SERVER_PASSWORD,database="attendance")
                     mySql_cursor=connect.cursor()
                     mySql_cursor.execute("update student set Dep=%s, Course=%s, Year=%s, name=%s, RollNumber=%s, email=%s where StudentID=%s",(
                         self.var_dep.get(),
@@ -282,7 +291,7 @@ class Student(tk.Toplevel):
             try:
                 deleteData=messagebox.askyesno("Delete","Do you want to update the student details?",parent=self)
                 if deleteData>0:
-                    connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
+                    connect=mysql.connector.connect(host=SQL_HOST,user=SQL_USER,password=SQL_SERVER_PASSWORD,database="attendance")
                     mySql_cursor=connect.cursor()
                     sql="delete from student where StudentID=%s"
                     val=(self.var_id.get(),)
@@ -315,7 +324,7 @@ class Student(tk.Toplevel):
             messagebox.showerror("Error","All fields are required",parent=self)
         else:
             try:
-                connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
+                connect=mysql.connector.connect(host=SQL_HOST,user=SQL_USER,password=SQL_SERVER_PASSWORD,database="attendance")
                 mySql_cursor=connect.cursor()
                 mySql_cursor.execute("select * from student")
                 myres=mySql_cursor.fetchall()
@@ -360,6 +369,69 @@ class Student(tk.Toplevel):
                         cv2.imshow("Cropped Face",face)
 
                     if cv2.waitKey(1)==13 or int(img_id)==100:
+                        break
+                cap.release()
+                cv2.destroyAllWindows()
+                messagebox.showinfo("Result","Generating dataset completed.")
+
+            except Exception as e:
+                messagebox.showerror("Error",f"Due to : {str(e)}",parent=self)
+
+    def add_more_attend_dataset(self):
+        if self.var_dep.get()=="Select Department" or self.var_course.get=="Select Course" or self.var_year.get=="Select Year" or self.var_id=="" or self.var_name=="" or self.var_roll=="" or self.var_email=="":
+            messagebox.showerror("Error","All fields are required",parent=self)
+        else:
+            try:
+                connect=mysql.connector.connect(host=SQL_HOST,user=SQL_USER,password=SQL_SERVER_PASSWORD,database="attendance")
+                mySql_cursor=connect.cursor()
+                mySql_cursor.execute("select * from student")
+                myres=mySql_cursor.fetchall()
+                id=self.var_id.get()
+                print(id)
+                mySql_cursor.execute("update student set Dep=%s, Course=%s, Year=%s, name=%s, RollNumber=%s, email=%s where StudentID=%s",(
+                    self.var_dep.get(),
+                    self.var_course.get(),
+                    self.var_year.get(),
+                    self.var_name.get(),
+                    self.var_roll.get(),
+                    self.var_email.get(),
+                    self.var_id.get()
+
+                ))
+                connect.commit()
+                self.fetch_data()
+                self.reset_data()
+                connect.close()
+    #=====================Load predef data on frontal face algo========
+                face_classifier=cv2.CascadeClassifier("haarcascade_frontalface_default.xml")  
+
+                def face_cropped(img):
+                    gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY) #converted to grayscale
+                    faces=face_classifier.detectMultiScale(gray,1.3,5)
+
+                    for(x,y,w,h) in faces:
+                        face_cropped=img[y:y+h,x:x+w]
+                        return face_cropped
+                
+                cap=cv2.VideoCapture(0) #for web camera
+                now=datetime.now()
+                dtString=now.strftime("%H:%M:%S")
+                img_id=int(1.25*((int)(dtString[:2]))+1.5*((int)(dtString[3:5]))+9.35*((int)(dtString[6:8])))
+                img_id*=100
+                img_id2=img_id+100
+                #print(img_id)
+                while True:
+                    ret,my_frame=cap.read()
+                    if face_cropped(my_frame) is not None:
+                        img_id+=1
+                        face=cv2.resize(face_cropped(my_frame),(450,450))
+                        face=cv2.cvtColor(face,cv2.COLOR_BGR2GRAY)
+                        file_name_path="data/user."+str(id)+"."+str(img_id)+".jpg"
+                        cv2.imwrite(file_name_path,face)
+                        cv2.putText(face,str(img_id),(50,50),cv2.FONT_HERSHEY_COMPLEX,1,(0,255,0),2)
+                        cv2.imshow("Cropped Face",face)
+
+                    if cv2.waitKey(1)==13 or int(img_id)==img_id2:
                         break
                 cap.release()
                 cv2.destroyAllWindows()
