@@ -1,5 +1,6 @@
 from cProfile import label
 from email import message
+import tkinter as tk
 from tkinter import *
 from tkinter import ttk
 from turtle import left, right
@@ -10,11 +11,11 @@ from tkinter import messagebox
 import cv2
 
 
-class Student:
-    def __init__(self,root):
-        self.root=root
-        self.root.geometry("1530x790+0+0")
-        self.root.title("Face Recognition System")
+class Student(tk.Toplevel):
+    def __init__(self,parent):
+        super().__init__(parent)
+        self.geometry("1530x790+0+0")
+        self.title("new window")
 
          #=============variables=======
         self.var_dep=StringVar()
@@ -28,7 +29,7 @@ class Student:
         self.var_radioButton1=StringVar()
         self.var_radioButton2=StringVar()
         
-        main_frame=Frame(bd=1)
+        main_frame=Frame(self,bd=1)
         main_frame.place(x=0,y=20,width=1500,height=650)
 
         #left pane
@@ -192,7 +193,7 @@ class Student:
     #add data
     def add_data(self):
         if self.var_dep.get()=="Select Department" or self.var_course.get=="Select Course" or self.var_year.get=="Select Year" or self.var_id=="" or self.var_name=="" or self.var_roll=="" or self.var_email=="":
-            messagebox.showerror("Error","All fields are required",parent=self.root)
+            messagebox.showerror("Error","All fields are required",parent=self)
         else:
             try:
                 connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
@@ -209,9 +210,9 @@ class Student:
                 connect.commit()
                 self.fetch_data()
                 connect.close()
-                messagebox.showinfo("Success","Student Details has been added Successfully",parent=self.root)
+                messagebox.showinfo("Success","Student Details has been added Successfully",parent=self)
             except Exception as e:
-                messagebox.showerror("Error",f"Due to : {str(e)}",parent=self.root)
+                messagebox.showerror("Error",f"Due to : {str(e)}",parent=self)
 
     #======fetch data===
     def fetch_data(self):
@@ -243,10 +244,10 @@ class Student:
     #==========updateion of data========
     def update_data(self):
         if self.var_dep.get()=="Select Department" or self.var_course.get=="Select Course" or self.var_year.get=="Select Year" or self.var_id=="" or self.var_name=="" or self.var_roll=="" or self.var_email=="":
-            messagebox.showerror("Error","All fields are required",parent=self.root)
+            messagebox.showerror("Error","All fields are required",parent=self)
         else:
             try:
-                updateData=messagebox.askyesno("Update","Do you want to update the student details?",parent=self.root)
+                updateData=messagebox.askyesno("Update","Do you want to update the student details? You can't update student ID since it's unique.",parent=self)
                 if updateData>0:
                     connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
                     mySql_cursor=connect.cursor()
@@ -264,22 +265,22 @@ class Student:
                 else:
                     if not updateData:
                         return 
-                messagebox.showinfo("Success","Student Details successfully updated",parent=self.root)
+                messagebox.showinfo("Success","Student Details successfully updated",parent=self)
                 connect.commit()
                 self.fetch_data()
                 connect.close()
 
             except Exception as e:
-                messagebox.showerror("Error",f"Due to : {str(e)}",parent=self.root)
+                messagebox.showerror("Error",f"Due to : {str(e)}",parent=self)
 
 
     #================delete function==========
     def delete_data(self):
         if self.var_id.get()=="":
-            messagebox.showerror("Error","Student ID must be required",parent=self.root)
+            messagebox.showerror("Error","Student ID must be required",parent=self)
         else:
             try:
-                deleteData=messagebox.askyesno("Delete","Do you want to update the student details?",parent=self.root)
+                deleteData=messagebox.askyesno("Delete","Do you want to update the student details?",parent=self)
                 if deleteData>0:
                     connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
                     mySql_cursor=connect.cursor()
@@ -292,10 +293,10 @@ class Student:
                 connect.commit()
                 self.fetch_data()
                 connect.close()
-                messagebox.showinfo("Delete","Student Details deleted successfully",parent=self.root)
+                messagebox.showinfo("Delete","Student Details deleted successfully",parent=self)
 
             except Exception as e:
-                messagebox.showerror("Error",f"Due to : {str(e)}",parent=self.root)
+                messagebox.showerror("Error",f"Due to : {str(e)}",parent=self)
 
     #===========Reset=========
     def reset_data(self):
@@ -311,16 +312,15 @@ class Student:
     #=====Generate date set of takje photo samples=====
     def generate_attend_dataset(self):
         if self.var_dep.get()=="Select Department" or self.var_course.get=="Select Course" or self.var_year.get=="Select Year" or self.var_id=="" or self.var_name=="" or self.var_roll=="" or self.var_email=="":
-            messagebox.showerror("Error","All fields are required",parent=self.root)
+            messagebox.showerror("Error","All fields are required",parent=self)
         else:
             try:
                 connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
                 mySql_cursor=connect.cursor()
                 mySql_cursor.execute("select * from student")
                 myres=mySql_cursor.fetchall()
-                id=0
-                for x in myres:
-                    id+=1
+                id=self.var_id.get()
+                print(id)
                 mySql_cursor.execute("update student set Dep=%s, Course=%s, Year=%s, name=%s, RollNumber=%s, email=%s where StudentID=%s",(
                     self.var_dep.get(),
                     self.var_course.get(),
@@ -366,12 +366,5 @@ class Student:
                 messagebox.showinfo("Result","Generating dataset completed.")
 
             except Exception as e:
-                messagebox.showerror("Error",f"Due to : {str(e)}",parent=self.root)
+                messagebox.showerror("Error",f"Due to : {str(e)}",parent=self)
 
-
-
-
-if __name__=="__main__":
-    root=Tk()
-    obj=Student(root)
-    root.mainloop()

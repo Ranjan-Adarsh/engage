@@ -1,4 +1,5 @@
 from tkinter import *
+import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from PIL import Image,ImageTk
@@ -11,11 +12,11 @@ from time import strftime
 from datetime import datetime
 
 
-class Face_Recognisation_System:
-    def __init__(self,root):
-        self.root=root
-        self.root.geometry("1530x790+0+0")
-        self.root.title("Face Recognition System")
+class Face_Recognisation_System(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.geometry("1530x790+0+0")
+        self.title("Face Recognition System")
 
        
 
@@ -24,7 +25,7 @@ class Face_Recognisation_System:
         bg_Img=bg_Img.resize((1500,650))
         self.photoBgImg=ImageTk.PhotoImage(bg_Img)
 
-        background_Image_Label=Label(self.root,image=self.photoBgImg)
+        background_Image_Label=Label(self,image=self.photoBgImg)
         background_Image_Label.place(x=0,y=0,width=1500,height=650)
 
         #title
@@ -51,7 +52,7 @@ class Face_Recognisation_System:
         b2=Button(background_Image_Label,command=self.recognise_face,image=self.photoImg2,cursor="hand2")
         b2.place(x=350,y=100,width=150,height=150)
 
-        b2_1=Button(background_Image_Label,text="Face Detector",command=self.recognise_face,cursor="hand2",font=("opnen sans",12,"bold"),fg="white",bg="blue")
+        b2_1=Button(background_Image_Label,text="Attendance Mark In",command=self.recognise_face,cursor="hand2",font=("opnen sans",12,"bold"),fg="white",bg="blue")
         b2_1.place(x=350,y=250,width=150,height=40)
 
         #Train Data
@@ -68,12 +69,14 @@ class Face_Recognisation_System:
 #=================Function buttons=========
 
     def student_details(self):
-        self.new_window=Toplevel(self.root)
-        self.app=Student(self.new_window)
+        
+        new_window=Student(self)
+        new_window.grab_set()
+
 #================Train Data=============
     def train_classifier(self):
-        data_directory=("data")
-        path=[os.path.join(data_directory,file) for file in os.listdir(data_directory)]
+        data_directory=("data") #data is the name of the folder
+        path=[os.path.join(data_directory,file) for file in os.listdir(data_directory)]  # used list comprehension for giving the path 
 
         faces=[]
         ids=[]
@@ -103,9 +106,10 @@ class Face_Recognisation_System:
             myDataList=f.readlines()
             nameList=[]
             for line in myDataList:
-                entry=line.split((","))
+                entry=line.split(',')
                 nameList.append(entry[0])
-            if((id not in nameList) and (roll not in nameList) and (name not in nameList)):
+            id2=str(id)
+            if(id2 not in nameList):
                 now=datetime.now()
                 date1=now.strftime("%d/%m/%Y")
                 dtString=now.strftime("%H:%M:%S")
@@ -115,7 +119,7 @@ class Face_Recognisation_System:
 
     #===============Face Recogniser==========
     def recognise_face(self):
-        def draw_boundary(img,classifier,scaleFactor,minNeighbor,Color,text,clf):
+        def draw_boundary(img,classifier,scaleFactor,minNeighbor,color,text,clf):
             gray_image=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
             features=classifier.detectMultiScale(gray_image,scaleFactor,minNeighbor)
 
@@ -128,24 +132,20 @@ class Face_Recognisation_System:
                 
                 connect=mysql.connector.connect(host="localhost",user="root",password="Rasengan08..",database="attendance")
                 mySql_cursor=connect.cursor()
-                
-                mySql_cursor.execute("select StudentID from student where StudentID ="+str(id))
-                tempStoreId=mySql_cursor.fetchone()
-                #tempStoreId="+".join(tempStoreId)
 
                 mySql_cursor.execute("select name from student where StudentID ="+str(id))
                 tempStoreName=mySql_cursor.fetchone()
-                #tempStoreName="+".join(tempStoreName)
+                tempStoreName="+".join(tempStoreName)
 
                 mySql_cursor.execute("select RollNumber from student where StudentID ="+str(id))
                 tempStoreRoll=mySql_cursor.fetchone()
-                #tempStoreRoll="+".join(tempStoreRoll)
+                tempStoreRoll="+".join(tempStoreRoll)
 
                 if confidence>77:
-                    cv2.putText(img,f"Id:{tempStoreId}",(x,y-55),cv2.FONT_HERSHEY_COMPLEX,0.8,(0,255,0),2)
+                    cv2.putText(img,f"Id:{id}",(x,y-55),cv2.FONT_HERSHEY_COMPLEX,0.8,(0,255,0),2)
                     cv2.putText(img,f"Roll:{tempStoreRoll}",(x,y-30),cv2.FONT_HERSHEY_COMPLEX,0.8,(0,255,0),2)
                     cv2.putText(img,f"Name:{tempStoreName}",(x,y-15),cv2.FONT_HERSHEY_COMPLEX,0.8,(0,255,0),2)
-                    self.mark_attendance(tempStoreId,tempStoreRoll,tempStoreName)
+                    self.mark_attendance(id,tempStoreRoll,tempStoreName)
                 else:
                     cv2.rectangle(img,(x,y),(x+w,y+h),(0,0,255),2)
                     cv2.putText(img,f"Unknown Face",(x,y-25),cv2.FONT_HERSHEY_COMPLEX,0.8,(0,255,0),2)
@@ -174,8 +174,7 @@ class Face_Recognisation_System:
         cv2.destroyAllWindows()
 
 if __name__=="__main__":
-    root=Tk()
-    obj=Face_Recognisation_System(root)
+    root=Face_Recognisation_System()
     root.mainloop()
 
 
